@@ -107,7 +107,7 @@ p43
 tp44
 bsS'_sklearn_version'
 p45
-S'0.20.3'
+S'0.20.4'
 p46
 sS'class_count_'
 p47
