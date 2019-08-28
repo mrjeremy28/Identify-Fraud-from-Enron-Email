@@ -18,6 +18,8 @@ import numpy as np
 import pandas as pd
 from pytablewriter import MarkdownTableWriter
 
+from sklearn.model_selection import train_test_split, GridSearchCV
+
 ### Task 1: Select what features you'll use.
 ### features_list is a list of strings, each of which is a feature name.
 ### The first feature must be "poi".
@@ -194,51 +196,17 @@ SelectFdr - Select features based on an estimated false discovery rate.
 SelectFwe - Select features based on family-wise error rate.
 GenericUnivariateSelect - Univariate feature selector with configurable mode.
 """
-from sklearn.feature_selection import SelectKBest, f_classif
-# Select features using KBest
-feature_select = SelectKBest(f_classif, k=10)
-# Train using features from targetFeatureSplit function
-feature_select.fit(features, labels)
 
-# print out scores to get a preview
-print "KBest scores raw:"
-print feature_select.scores_
-
-# Create function to choose the 2nd element for sorting later
 def choose_2nd_element(element):
+    """Create function to choose the 2nd element for sorting later
+    """
     return element[1]
-
-# map features to scores, making sure to skip the first element which is poi
-scores = zip(new_feature_list[1:], feature_select.scores_)
-# Sort the scores using 2nd element which is the value, 
-# sort in reverse to get highest values first
-scores = sorted(scores, key=choose_2nd_element, reverse = True)
-# print out scores
-print "Scores sorted by highest first:"
-pp.pprint(scores)
-
-# create kBest features by taking top 10 from scores list and add poi to begginning
-kBest_features = ['poi'] + [(i[0]) for i in scores[0:10]]
-print 'Top 10 KBest Features:', kBest_features
-
-
-
-### Task 4: Try a varity of classifiers
-### Please name your classifier clf for easy export below.
-### Note that if you want to do PCA or other multi-stage operations,
-### you'll need to use Pipelines. For more info:
-### http://scikit-learn.org/stable/modules/pipeline.html
-
-# lesson 15 for evaluate_poi_identifier.py
-# split data to 35% for training
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score, precision_score, recall_score
-features_train, features_test, labels_train, labels_test = train_test_split(features, labels, test_size=0.35, random_state=42)
 
 def mean_scores(clf, classifier_name, features, labels, iters = 80):
     """ given a classifier and features, labels, iterate through random
     state for the classifier and output the mean accuracy, precision and recall
     """
+    from sklearn.metrics import accuracy_score, precision_score, recall_score
     acc = []
     pre = []
     recall = []
@@ -264,6 +232,8 @@ def mean_scores(clf, classifier_name, features, labels, iters = 80):
     return np.mean(acc), np.mean(pre), np.mean(recall)
     
 def algo_get_scores(clf, classifier_name, dataset, features, scale = True):
+    ''' function to return accuracy, precision and recal for a classifer
+    '''
     from sklearn import preprocessing
     # create data from features and dataset
     data = featureFormat(dataset, features, sort_keys = True)
