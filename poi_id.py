@@ -279,7 +279,100 @@ def algo_get_scores(clf, classifier_name, dataset, features, scale = True):
     # return values
     return acc_score, prec_score, rec_score
 
+def run_kbest(dataset, feature_list, kparam):
+    """ This function takes a dataset and feature_list and kparam 
+    and returns the scores for each feature
+    """
+    data = featureFormat(dataset, feature_list, sort_keys = True)
+    labels, features = targetFeatureSplit(data)
+
+    # from sklearn.model_selection import train_test_split
+    # features_train, features_test, labels_train, labels_test = \
+    #     train_test_split(features, labels, test_size = 0.35, random_state = 42)
+
+    from sklearn.feature_selection import SelectKBest, f_classif, chi2, f_regression
+    # Select features using KBest
+    feature_select = SelectKBest(f_regression, k=kparam)
+    # Train using features 
+    feature_select.fit(features, labels)
+
+    # print out scores to get a preview
+    # print "KBest scores raw:"
+    # print feature_select.scores_
+    return feature_select.scores_
+
+# Create list without the POI Label to get KBest features
+f_list = new_feature_list[1:]
+# Create range from 1 to length of feature list
+kparams = range(1, len(new_feature_list))
+# empty list for stores scores
+k_score_list = []
+for kparam in kparams:
+    # Grab score for kparam
+    k_scores = run_kbest(my_dataset, new_feature_list, kparam)
+    # Combine 2 lists into tuple
+    scores = zip(f_list, k_scores)
+    # sort tuple to highest score is on top
+    scores = sorted(scores, key=choose_2nd_element, reverse = True)
+    # only grab kparam number of in list and put poi label in front for parameters
+    kBest_features = ['poi'] + [(i[0]) for i in scores[0:kparam]]
+    # print len(kBest_features)
+    # print kBest_features
+    # get accuracy, precision, and recall scores
+    from sklearn.linear_model import LogisticRegression
+    acc_score, prec_score, rec_score = algo_get_scores(LogisticRegression(tol=0.1, C=0.02, class_weight='balanced'), "Logistic Regression", my_dataset, kBest_features)
+    # append values to list for printing out later
+    k_score_list.append([kparam, prec_score, rec_score])
+    # print acc_score, prec_score, rec_score 
+    
+# create panda Dataframe for markdown writer
+kbest_pd = pd.DataFrame(k_score_list, columns=['k', 'Precision', 'Recall'])
+# assign writer
+writer = MarkdownTableWriter()
+# set table name
+writer.table_name = "K Values at different values"
+# create markdown table
+writer.from_dataframe(
+    kbest_pd
+)
+# display markdown table for copy/paste
+writer.write_table()
+
+# Based on output we want to use k value of 7
+final_k_value = 7
+k_scores = run_kbest(my_dataset, new_feature_list, final_k_value)
+
+# map features to scores, making sure to skip the first element which is poi
+scores = zip(new_feature_list[1:], k_scores)
+# Sort the scores using 2nd element which is the value, 
+# sort in reverse to get highest values first
+scores = sorted(scores, key=choose_2nd_element, reverse = True)
+# print out scores
+print "Scores sorted by highest first:"
+pp.pprint(scores)
+
+# create kBest features by taking top k from scores list and add poi to begginning
+kBest_features = ['poi'] + [(i[0]) for i in scores[0:final_k_value]]
+print 'Top 10 KBest Features:', kBest_features
+
+
+
+### Task 4: Try a varity of classifiers
+### Please name your classifier clf for easy export below.
+### Note that if you want to do PCA or other multi-stage operations,
+### you'll need to use Pipelines. For more info:
+### http://scikit-learn.org/stable/modules/pipeline.html
+
+# lesson 15 for evaluate_poi_identifier.py
+# split data to 35% for training
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score, precision_score, recall_score
+features_train, features_test, labels_train, labels_test = train_test_split(features, labels, test_size=0.35, random_state=42)
+
+
 def algo_performance(clf, classifier_name, dataset, orig_features, new_features):
+    ''' function to get accuracy of 2 features to compare
+    '''
     # get scores for classifier using original features
     orig_accuracy_score, orig_precision_score, orig_recall_score = \
         algo_get_scores(clf, classifier_name, dataset, orig_features, True)
