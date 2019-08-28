@@ -17,7 +17,9 @@ import numpy as np
 # pandas and MarkdownTableWriter library
 import pandas as pd
 from pytablewriter import MarkdownTableWriter
-
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score, precision_score, recall_score
 ### Task 1: Select what features you'll use.
 ### features_list is a list of strings, each of which is a feature name.
 ### The first feature must be "poi".
@@ -115,47 +117,103 @@ print new_feature_list
 
 """
 START HERE FOR KBESTScores
+run_kbest('all') to get list of scores
+for k in range(1:15):
+    run_kbest()
+    use scores to get features
+    append poi to beggining
+    run classifiers to get scores of each
+    output k, precision, recall
 """
-new_feature_list = features_list
+# new_feature_list = features_list
 # Create function to choose the 2nd element for sorting later
 def choose_2nd_element(element):
     return element[1]
 
 def run_kbest(dataset, feature_list, kparam):
+    """ This function takes a dataset and feature_list and kparam 
+    and returns the scores for each feature
+    """
     data = featureFormat(dataset, feature_list, sort_keys = True)
     labels, features = targetFeatureSplit(data)
-    # from sklearn import preprocessing
-    # scaler = preprocessing.MinMaxScaler()
-    # features = scaler.fit_transform(features)
 
-
-    from sklearn.model_selection import train_test_split
-    features_train, features_test, labels_train, labels_test = \
-        train_test_split(features, labels, test_size = 0.35, random_state = 42)
+    # from sklearn.model_selection import train_test_split
+    # features_train, features_test, labels_train, labels_test = \
+    #     train_test_split(features, labels, test_size = 0.35, random_state = 42)
 
     from sklearn.feature_selection import SelectKBest, f_classif, chi2, f_regression
     # Select features using KBest
     feature_select = SelectKBest(f_regression, k=kparam)
-    # Train using features from targetFeatureSplit function
-    feature_select.fit(features_train, labels_train)
+    # Train using features 
+    feature_select.fit(features, labels)
 
     # print out scores to get a preview
-    print "KBest scores raw:"
-    print feature_select.scores_
+    # print "KBest scores raw:"
+    # print feature_select.scores_
     return feature_select.scores_
 
-f_list = new_feature_list[1:]
-feature_dict = {k:[] for k in f_list}
-kparams_columns = ['k=10', 'k=2', 'k=3', 'k=4', 'k=8', 'all']
-kparams = [10, 2, 3, 4, 8, 'all']
 
+def mean_scores(clf, classifier_name, features, labels, iters = 80):
+    """ given a classifier and features, labels, iterate through random
+    state for the classifier and output the mean accuracy, precision and recall
+    """
+    acc = []
+    pre = []
+    recall = []
+    t0 = time()
+    # iteration based on parameter of function
+    for i in range(iters):
+        features_train, features_test, labels_train, labels_test = \
+        train_test_split(features, labels, test_size = 0.35, random_state = i)
+        clf.fit(features_train, labels_train)
+        predicts = clf.predict(features_test)
+
+        acc = acc + [accuracy_score(labels_test, predicts)] 
+        pre = pre + [precision_score(labels_test, predicts)]
+        recall = recall + [recall_score(labels_test, predicts)]
+        
+    # output time for testing algorithm performance
+    print "{0} took a total time of {1}".format(classifier_name, round(time()-t0, 3), "s")
+    # print "accuracy: {}".format(np.mean(acc))
+    # print "precision: {}".format(np.mean(pre))
+    # print "recall: {}".format(np.mean(recall))
+
+    # retun mean accuracy, precision, and recall
+    return np.mean(acc), np.mean(pre), np.mean(recall)
+    
+def algo_get_scores(clf, classifier_name, dataset, features, scale = True):
+    from sklearn import preprocessing
+    # create data from features and dataset
+    data = featureFormat(dataset, features, sort_keys = True)
+    # create labels and features
+    labels, features = targetFeatureSplit(data)
+    # if scale is True then Scale the data
+    if scale:
+        scaler = preprocessing.MinMaxScaler()
+        features = scaler.fit_transform(features)
+
+    # grab the scores for the classifier
+    acc_score, prec_score, rec_score = mean_scores(clf, classifier_name, features, labels)
+    # return values
+    return acc_score, prec_score, rec_score
+
+
+f_list = new_feature_list[1:]
+
+kparams = range(1, len(new_feature_list))
+k_score_list = []
 for kparam in kparams:
     k_scores = run_kbest(my_dataset, new_feature_list, kparam)
-    for i in range(0,len(f_list)):
-        list_key = f_list[i]
-        if list_key in feature_dict.keys():
-            feature_dict[list_key].append(k_scores[i])
-
+    scores = zip(f_list, k_scores)
+    scores = sorted(scores, key=choose_2nd_element, reverse = True)
+    kBest_features = ['poi'] + [(i[0]) for i in scores[0:kparam]]
+    # print len(kBest_features)
+    # print kBest_features
+    acc_score, prec_score, rec_score = algo_get_scores(LogisticRegression(tol=0.1, C=0.02, class_weight='balanced'), "Logistic Regression", my_dataset, kBest_features)
+    k_score_list.append([kparam, prec_score, rec_score])
+    # print acc_score, prec_score, rec_score 
+    
+# print k_score_list
 
 '''   
 # map features to scores, making sure to skip the first element which is poi
@@ -171,25 +229,21 @@ pp.pprint(scores)
 # kBest_features = ['poi'] + [(i[0]) for i in scores[0:10]]
 # print 'Top 10 KBest Features:', kBest_features
 
-# feature_dict = dict(zip(new_feature_list[1:], []))
-
-
-# kparams = ['k=10', 'k=2', 'k=3', 'k=4', 'k=8', 'all']
-# kparams = ['k=10']
-kbest_pd = pd.DataFrame.from_dict(feature_dict, orient='index', columns=kparams)
-print kbest_pd
+kbest_pd = pd.DataFrame(k_score_list, columns=['k', 'Precision', 'Recall'])
+# kbest_pd = pd.DataFrame.from_dict(feature_dict, orient='index', columns=kparams)
+# print kbest_pd
 writer = MarkdownTableWriter()
 # set table name
-writer.table_name = "ss"
+writer.table_name = "K Values at different values"
 # create markdown table
 writer.from_dataframe(
-    kbest_pd,
-    add_index_column=True
+    kbest_pd
 )
 # display markdown table for copy/paste
 writer.write_table()
 
 
+'''
 ### Extract features and labels from dataset for local testing
 data = featureFormat(my_dataset, new_feature_list, sort_keys = True)
 labels, features = targetFeatureSplit(data)
@@ -228,87 +282,4 @@ def runKBest(kparam):
 runKBest(6)
 runKBest(10)
 # runKBest('all')
-
-data_df = pd.DataFrame.from_dict(data_dict, orient='index')
-data_df.shape
-data_df.replace(to_replace='NaN', value=np.nan, inplace=True)
-data_df.count().sort_values()
-
-data_df = data_df.drop(["email_address"], axis=1)
-data_df = data_df.drop(["LOCKHART EUGENE E"], axis=0)
-cols = [
-    'poi', 'salary', 'bonus', 'long_term_incentive', 'deferred_income',
-    'deferral_payments', 'loan_advances', 'other', 'expenses', 'director_fees',
-    'total_payments', 'exercised_stock_options', 'restricted_stock',
-    'restricted_stock_deferred', 'total_stock_value',
-    'from_poi_to_this_person', 'shared_receipt_with_poi', 'to_messages',
-    'from_this_person_to_poi', 'from_messages'
-]
-data_df = data_df[cols]
-# data_df.drop("TOTAL", inplace=True)
-
-def do_split(data):
-    X = data.copy()
-    #Removing the poi labels and put them in a separate array, transforming it
-    #from True / False to 0 / 1
-    y = X.pop("poi").astype(int)
-    
-    return X, y, 
-
-import numpy as np
-import matplotlib.pyplot as plt
-from sklearn.datasets import load_digits
-from sklearn.model_selection import GridSearchCV
-from sklearn.pipeline import Pipeline
-from sklearn.svm import LinearSVC
-from sklearn.decomposition import PCA, NMF
-from sklearn.feature_selection import SelectKBest, chi2
-from sklearn.naive_bayes import GaussianNB
-from sklearn.model_selection import StratifiedShuffleSplit
-
-pipe = Pipeline([
-    # the reduce_dim stage is populated by the param_grid
-    ('reduce_dim', PCA(random_state=42)),
-    ('classify', GaussianNB())
-])
-
-N_FEATURES_OPTIONS = [2, 4, 8]
-C_OPTIONS = [1, 10, 100, 1000]
-param_grid = [
-    {
-        'reduce_dim': [PCA(random_state=42)],
-        'reduce_dim__n_components': N_FEATURES_OPTIONS
-    },
-    {
-        'reduce_dim': [SelectKBest()],
-        'reduce_dim__k': N_FEATURES_OPTIONS
-    },
-]
-reducer_labels = ['PCA', 'KBest']
-cv = StratifiedShuffleSplit(random_state=42)
-grid = GridSearchCV(pipe, cv=cv, n_jobs=1, param_grid=param_grid)
-# digits = load_digits()
-X, y = do_split(data_df)
-grid.fit(X, y)
-
-mean_scores = np.array(grid.cv_results_['mean_test_score'])
-# scores are in the order of param_grid iteration, which is alphabetical
-mean_scores = mean_scores.reshape( -1, len(N_FEATURES_OPTIONS))
-# select score for best C
-mean_scores = mean_scores.max(axis=0)
-bar_offsets = (np.arange(len(N_FEATURES_OPTIONS)) *
-               (len(reducer_labels) + 1) + .5)
-
-plt.figure()
-COLORS = 'bgrcmyk'
-for i, (label, reducer_scores) in enumerate(zip(reducer_labels, mean_scores)):
-    plt.bar(bar_offsets + i, reducer_scores, label=label, color=COLORS[i])
-
-plt.title("Comparing feature reduction techniques")
-plt.xlabel('Reduced number of features')
-plt.xticks(bar_offsets + len(reducer_labels) / 2, N_FEATURES_OPTIONS)
-plt.ylabel('Digit classification accuracy')
-plt.ylim((0, 1))
-plt.legend(loc='upper left')
-
-plt.show()
+'''
