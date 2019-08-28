@@ -94,7 +94,7 @@ for employee in my_dataset:
 
 I looked at the performance of each algorithm with and without new features to determine if I should keep.
 
-### Mean Precision and Recall for Features
+#### Mean Precision and Recall for Features
 
 |Algorithm     |original_precision|original_recall|new_precision|new_recall|
 |--------------|-----------------:|--------------:|------------:|---------:|
@@ -104,37 +104,72 @@ I looked at the performance of each algorithm with and without new features to d
 |AdaBoost      |            0.3376|         0.2242|       0.3219|    0.2302|
 |Decision Tree |            0.1775|         0.1164|       0.2691|    0.1601|
 
+Based on the comparison of original features and the 2 new features, there seemed to be a small positive improvement to the recall and precision when using the 2 new features.
+
+In the final list of important features, I ended up using only the fraction_to_poi feature based on the KBest score of 7.
 
 ### Intelligently select features  - Univariate
-I used SelectKBest in order to pick the best features. SelectKBest will select features according to the highest k scores.
+I used SelectKBest in order to pick the best features. SelectKBest will help you select features according to the highest k scores.
 
-KBest Scores sorted:
+I ran through the SelectKBest with k values from 1 to 21, which is the total features length. Then I ran the selected features through basic algorithm Logicstic Regression to find the precision and recall scores for each k value shown here:
+
+##### K Values at different values
+| k |Precision|Recall|
+|--:|--------:|-----:|
+|  1|   0.1771|0.6244|
+|  2|   0.1630|0.4773|
+|  3|   0.2373|0.8608|
+|  4|   0.1955|1.0000|
+|  5|   0.2011|0.9879|
+|  6|   0.3566|0.4977|
+|  7|   0.3544|0.5106|
+|  8|   0.3369|0.5443|
+|  9|   0.3345|0.5554|
+| 10|   0.3086|0.6310|
+| 11|   0.3077|0.6226|
+| 12|   0.3102|0.7110|
+| 13|   0.3109|0.7374|
+| 14|   0.3118|0.7374|
+| 15|   0.3007|0.7674|
+| 16|   0.2991|0.7581|
+| 17|   0.2975|0.7667|
+| 18|   0.2951|0.7677|
+| 19|   0.2957|0.7677|
+| 20|   0.2956|0.7660|
+| 21|   0.2958|0.7639|
+
+Based on the scores, I decided k value of 7 had the best precision and recall and both had to be higher the .3 according to project specifications.
+
+The features score from the SelectKBest algorithm came back with same scores on all of the k values. If you don't give SelectKBest a k value, it will choose 10 by default.
+Here is a list of the features with the scores sorted highest:
+
+KBest Scores sorted
 ```python
 [   ('exercised_stock_options', 25.09754152873549),
-    ('total_stock_value', 24.4676540475264),
-    ('bonus', 21.06000170753657),
-    ('salary', 18.575703268041785),
-    ('fraction_to_poi', 16.64170707046899),
+    ('total_stock_value', 24.46765404752639),
+    ('bonus', 21.060001707536575),
+    ('salary', 18.57570326804178),
+    ('fraction_to_poi', 16.64170707046902),
     ('deferred_income', 11.5955476597306),
     ('long_term_incentive', 10.072454529369441),
-    ('restricted_stock', 9.346700791051488),
-    ('total_payments', 8.866721537107772),
-    ('shared_receipt_with_poi', 8.74648553212908),
-    ('loan_advances', 7.242730396536018),
-    ('expenses', 6.23420114050674),
-    ('from_poi_to_this_person', 5.344941523147337),
-    ('other', 4.204970858301416),
-    ('fraction_from_poi', 3.210761916966744),
-    ('from_this_person_to_poi', 2.426508127242878),
-    ('director_fees', 2.107655943276091),
-    ('to_messages', 1.69882434858085),
-    ('deferral_payments', 0.2170589303395084),
-    ('from_messages', 0.16416449823428736),
-    ('restricted_stock_deferred', 0.06498431172371151)]
+    ('restricted_stock', 9.346700791051491),
+    ('total_payments', 8.866721537107793),
+    ('shared_receipt_with_poi', 8.746485532129073),
+    ('loan_advances', 7.242730396536019),
+    ('expenses', 6.234201140506745),
+    ('from_poi_to_this_person', 5.344941523147334),
+    ('other', 4.204970858301414),
+    ('fraction_from_poi', 3.2107619169667614),
+    ('from_this_person_to_poi', 2.4265081272428786),
+    ('director_fees', 2.10765594327609),
+    ('to_messages', 1.6988243485808479),
+    ('deferral_payments', 0.21705893033950854),
+    ('from_messages', 0.16416449823428617),
+    ('restricted_stock_deferred', 0.06498431172371144)]
 ```
 
 I ended up using the following features:
-> 'poi', 'exercised_stock_options', 'total_stock_value', 'bonus', 'salary', 'fraction_to_poi', 'deferred_income', 'long_term_incentive', 'restricted_stock', 'total_payments', 'shared_receipt_with_poi'
+> 'poi', 'exercised_stock_options', 'total_stock_value', 'bonus', 'salary', 'fraction_to_poi', 'deferred_income', 'long_term_incentive'
 
 ### Properly scale features 
 I did end up using feature scaling because the features were in different units, i.e. salary vs email count.
@@ -151,10 +186,9 @@ I chose Naive Bayes because it had the best recall and precision scores:
 |--------------|-------------------------:|--------------------------:|-----------------------:|--------------------:|---------------------:|------------------:|
 |Support Vector|                    0.8779|                     0.0000|                  0.0000|               0.8779|                0.0000|             0.0000|
 |Naive Bayes   |                    0.5466|                     0.1894|                  0.7105|               0.5466|                0.1894|             0.7105|
-|Random Forest |                    0.8669|                     0.3050|                  0.1245|               0.8637|                0.3137|             0.1279|
-|AdaBoost      |                    0.8409|                     0.3006|                  0.2385|               0.8402|                0.2982|             0.2344|
-|Decision Tree |                    0.8098|                     0.2696|                  0.2879|               0.8105|                0.2482|             0.2664|
-
+|Random Forest |                    0.8723|                     0.3306|                  0.1253|               0.8681|                0.2957|             0.1355|
+|AdaBoost      |                    0.8400|                     0.2974|                  0.2344|               0.8400|                0.2974|             0.2344|
+|Decision Tree |                    0.8071|                     0.2294|                  0.2584|               0.8098|                0.2530|             0.2884|
 
 I also tried Support Vector Machine, Random Forest, AdaBoost and DecisionTree. AdaBoost took the longest to get the average scores at around 31 seconds.
 
@@ -208,7 +242,7 @@ After rerunning, Decision Tree's performance was:
 
 | Algorithm    |original features accuracy|original features precision|original features recall|new features accuracy|new features precision|new features recall|
 |--------------|-----------------:|--------------:|------------:|---------:|---------:|---------:|
-|Decision Tree |            0.8723|         0.2697|       0.1021|    0.8681|    0.2682|    0.1068|
+|Decision Tree |            0.8669|         0.3751|       0.1343|    0.8607|    0.2788|    0.1063|
 
 
 ## Validate and Evaluate
@@ -217,10 +251,12 @@ After rerunning, Decision Tree's performance was:
 
 ### Usage of Evaluation Metrics 
 
-2 Evaluation Metrics are Recall and Precision. 
-Recall is calculated by taking the count of True Positives and divide by (True Positive + False Negative). This measures how many correctly identified positives there were.
+Two Evaluation Metrics are Recall and Precision. 
 
-Precision is calculated by taking the count of True Positives and dive by (True Positives + False Positives). This measures how many truly should be in positive class.
+Recall is calculated by taking the count of True Positives and divide by (True Positive + False Negative). This measures how many correctly identified positives there were. In the case of this project a True Postive is a POI that was identified correctly as a POI. A False Negative is a POI who was not identified correctly. 
+When I ran the final test_classifier function I was able to get 0.37950, which means that only 37.95 % of POI's were identified correclty.
+
+Precision is calculated by taking the count of True Positives and divide by (True Positives + False Positives). This measures how many truly should be in positive class. In the case of this project a True Postive is a POI that was identified correctly as a POI. A False Positive is a non-POI identified as a POI. Using Naive Bayes classifier I was able to get a precision score of 0.48716, which means 48.72 % of people identified as a POI were actually POI's and 998 predicitions were incorrect.
 
 ### Discuss validation and its importance.
 
@@ -228,17 +264,24 @@ Validation is taking a trained model and evaluating against a test dataset. The 
 
 ### Validation Strategy 
 
-Here is validation of all of the algorithms using final_dataset:
+I decided to use cross validation and train_test_split to split 35% of my dataset in order to validate the perfomance of the final algorithm chose. Then I used sklean.metrics -> accuracy, precision and score to validate my algorithms. 
 
-### Mean Accuracy, Precision and Recall for Features
+```python
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score, precision_score, recall_score
+features_train, features_test, labels_train, labels_test = train_test_split(features, labels, test_size=0.35, random_state=42)
+
+```
+
+#### Mean Accuracy, Precision and Recall for Final Algorithm
 
 | Algorithm    |Best features accuracy|Best features precision|Best features recall|
 |--------------|---------------------:|----------------------:|-------------------:|
-|Support Vector|                0.8779|                 0.0000|              0.0000|
-|Naive Bayes   |                0.8451|                 0.4063|              0.3216|
-|Random Forest |                0.8701|                 0.3846|              0.1546|
-|AdaBoost      |                0.8407|                 0.3112|              0.2212|
-|Decision Tree |                0.8211|                 0.2629|              0.2961|
+|Support Vector|                0.8704|                 0.0000|              0.0000|
+|Naive Bayes   |                0.8480|                 0.4087|              0.3645|
+|Random Forest |                0.8648|                 0.3897|              0.1648|
+|AdaBoost      |                0.8204|                 0.2762|              0.2388|
+|Decision Tree |                0.8217|                 0.3038|              0.2791|
 
 
 ### Algorithm Performance
@@ -247,10 +290,6 @@ When tester.py was used to evaluate performance of classifier I picked Naive Bay
 
 | Accuracy   |      Precision      |  Recall | F1 | F2 | Total predictions | True positives | False positives | False negatives | True negatives |
 |----------|-------------|------|------|------|------|------|------|------|------|
-| 0.84200 |  0.38622 |  0.31400 | 0.34639 | 0.32620 | 15000 |  628 |  998 | 1372 | 12002 |
+| 0.85429 |  0.48716 |  0.37950 | 0.42664 | 0.39705 | 14000 |  759 |  799 | 1241 | 11201 |
 
 
-
-```python
-
-```
