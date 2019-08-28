@@ -15,10 +15,4 @@ aS'deferred_income'
 p7
 aS'long_term_incentive'
 p8
-aS'restricted_stock'
-p9
-aS'total_payments'
-p10
-aS'shared_receipt_with_poi'
-p11
 a.
