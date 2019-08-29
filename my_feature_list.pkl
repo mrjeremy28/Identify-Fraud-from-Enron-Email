@@ -11,8 +11,4 @@ aS'salary'
 p5
 aS'fraction_to_poi'
 p6
-aS'deferred_income'
-p7
-aS'long_term_incentive'
-p8
 a.

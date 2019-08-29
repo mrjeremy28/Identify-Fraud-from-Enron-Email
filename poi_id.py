@@ -206,10 +206,11 @@ def mean_scores(clf, classifier_name, features, labels, iters = 80):
     """ given a classifier and features, labels, iterate through random
     state for the classifier and output the mean accuracy, precision and recall
     """
-    from sklearn.metrics import accuracy_score, precision_score, recall_score
+    from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
     acc = []
     pre = []
     recall = []
+    f1 = []
     t0 = time()
     # iteration based on parameter of function
     for i in range(iters):
@@ -221,15 +222,17 @@ def mean_scores(clf, classifier_name, features, labels, iters = 80):
         acc = acc + [accuracy_score(labels_test, predicts)] 
         pre = pre + [precision_score(labels_test, predicts)]
         recall = recall + [recall_score(labels_test, predicts)]
+        f1 = f1 + [f1_score(labels_test, predicts)]
         
     # output time for testing algorithm performance
     print "{0} took a total time of {1}".format(classifier_name, round(time()-t0, 3), "s")
     # print "accuracy: {}".format(np.mean(acc))
     # print "precision: {}".format(np.mean(pre))
     # print "recall: {}".format(np.mean(recall))
+    # print "f1: {}".format(np.mean(f1))
 
     # retun mean accuracy, precision, and recall
-    return np.mean(acc), np.mean(pre), np.mean(recall)
+    return np.mean(acc), np.mean(pre), np.mean(recall), np.mean(f1)
     
 def algo_get_scores(clf, classifier_name, dataset, features, scale = True):
     ''' function to return accuracy, precision and recal for a classifer
@@ -245,9 +248,9 @@ def algo_get_scores(clf, classifier_name, dataset, features, scale = True):
         features = scaler.fit_transform(features)
 
     # grab the scores for the classifier
-    acc_score, prec_score, rec_score = mean_scores(clf, classifier_name, features, labels)
+    acc_score, prec_score, rec_score, f1_measure_score = mean_scores(clf, classifier_name, features, labels)
     # return values
-    return acc_score, prec_score, rec_score
+    return acc_score, prec_score, rec_score, f1_measure_score
 
 def run_kbest(dataset, feature_list, kparam):
     """ This function takes a dataset and feature_list and kparam 
@@ -290,13 +293,13 @@ for kparam in kparams:
     # print kBest_features
     # get accuracy, precision, and recall scores
     from sklearn.linear_model import LogisticRegression
-    acc_score, prec_score, rec_score = algo_get_scores(LogisticRegression(tol=0.1, C=0.02, class_weight='balanced'), "Logistic Regression", my_dataset, kBest_features)
+    acc_score, prec_score, rec_score, f1_measure_score = algo_get_scores(LogisticRegression(class_weight='balanced'), "Logistic Regression", my_dataset, kBest_features)
     # append values to list for printing out later
-    k_score_list.append([kparam, prec_score, rec_score])
+    k_score_list.append([kparam, prec_score, rec_score, f1_measure_score])
     # print acc_score, prec_score, rec_score 
     
 # create panda Dataframe for markdown writer
-kbest_pd = pd.DataFrame(k_score_list, columns=['k', 'Precision', 'Recall'])
+kbest_pd = pd.DataFrame(k_score_list, columns=['k', 'Precision', 'Recall', 'f1'])
 # assign writer
 writer = MarkdownTableWriter()
 # set table name
@@ -308,8 +311,8 @@ writer.from_dataframe(
 # display markdown table for copy/paste
 writer.write_table()
 
-# Based on output we want to use k value of 7
-final_k_value = 7
+# Based on output we want to use k value of 5
+final_k_value = 5
 k_scores = run_kbest(my_dataset, new_feature_list, final_k_value)
 
 # map features to scores, making sure to skip the first element which is poi
@@ -323,7 +326,7 @@ pp.pprint(scores)
 
 # create kBest features by taking top k from scores list and add poi to begginning
 kBest_features = ['poi'] + [(i[0]) for i in scores[0:final_k_value]]
-print 'Top 10 KBest Features:', kBest_features
+print 'The KBest Features:', kBest_features
 
 
 
@@ -336,7 +339,7 @@ print 'Top 10 KBest Features:', kBest_features
 # lesson 15 for evaluate_poi_identifier.py
 # split data to 35% for training
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score, precision_score, recall_score
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 features_train, features_test, labels_train, labels_test = train_test_split(features, labels, test_size=0.35, random_state=42)
 
 
@@ -344,11 +347,11 @@ def algo_performance(clf, classifier_name, dataset, orig_features, new_features)
     ''' function to get accuracy of 2 features to compare
     '''
     # get scores for classifier using original features
-    orig_accuracy_score, orig_precision_score, orig_recall_score = \
+    orig_accuracy_score, orig_precision_score, orig_recall_score, orig_f1_score = \
         algo_get_scores(clf, classifier_name, dataset, orig_features, True)
     
     # get scores for classifier using new features
-    new_accuracy_score, new_precision_score, new_recall_score = \
+    new_accuracy_score, new_precision_score, new_recall_score, new_f1_score = \
         algo_get_scores(clf, classifier_name, dataset, new_features, True)
     
     # return dictionary 
@@ -378,13 +381,13 @@ def displayMarkdownFeatures(feature_list1, feature_list2, columnName1, columnNam
     dt_tree = algo_performance(tree.DecisionTreeClassifier(), "Decision Tree", my_dataset, feature_list1, feature_list2)
     classifier_dict.update(dt_tree)
     # run perfomance for Random Forest
-    rnd_forest = algo_performance(RandomForestClassifier(), "Random Forest", my_dataset, feature_list1, feature_list2)
+    rnd_forest = algo_performance(RandomForestClassifier(n_estimators=10), "Random Forest", my_dataset, feature_list1, feature_list2)
     classifier_dict.update(rnd_forest)
     # run perfomance for AdaBoost
     ada_boost = algo_performance(AdaBoostClassifier(), "AdaBoost", my_dataset, feature_list1, feature_list2)
     classifier_dict.update(ada_boost)
     # run perfomance for Support Vector
-    svm_svc = algo_performance(svm.SVC(), "Support Vector", my_dataset, feature_list1, feature_list2)
+    svm_svc = algo_performance(svm.SVC(gamma='scale'), "Support Vector", my_dataset, feature_list1, feature_list2)
     classifier_dict.update(svm_svc)
     # print classifer_dict
     # print(classifier_dict)

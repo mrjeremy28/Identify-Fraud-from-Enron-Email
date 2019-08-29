@@ -114,31 +114,31 @@ I used SelectKBest in order to pick the best features. SelectKBest will help you
 I ran through the SelectKBest with k values from 1 to 21, which is the total features length. Then I ran the selected features through basic algorithm Logicstic Regression to find the precision and recall scores for each k value shown here:
 
 ##### K Values at different values
-| k |Precision|Recall|
-|--:|--------:|-----:|
-|  1|   0.1771|0.6244|
-|  2|   0.1630|0.4773|
-|  3|   0.2373|0.8608|
-|  4|   0.1955|1.0000|
-|  5|   0.2011|0.9879|
-|  6|   0.3566|0.4977|
-|  7|   0.3544|0.5106|
-|  8|   0.3369|0.5443|
-|  9|   0.3345|0.5554|
-| 10|   0.3086|0.6310|
-| 11|   0.3077|0.6226|
-| 12|   0.3102|0.7110|
-| 13|   0.3109|0.7374|
-| 14|   0.3118|0.7374|
-| 15|   0.3007|0.7674|
-| 16|   0.2991|0.7581|
-| 17|   0.2975|0.7667|
-| 18|   0.2951|0.7677|
-| 19|   0.2957|0.7677|
-| 20|   0.2956|0.7660|
-| 21|   0.2958|0.7639|
+| k |Precision|Recall|  f1  |
+|--:|--------:|-----:|-----:|
+|  1|   0.3945|0.4394|0.3739|
+|  2|   0.2552|0.3262|0.2685|
+|  3|   0.3450|0.3831|0.3415|
+|  4|   0.2903|0.4291|0.3306|
+|  5|   0.3615|0.6744|0.4459|
+|  6|   0.3305|0.5613|0.4024|
+|  7|   0.3213|0.5514|0.3915|
+|  8|   0.3167|0.5496|0.3871|
+|  9|   0.3245|0.5655|0.3952|
+| 10|   0.2914|0.5571|0.3659|
+| 11|   0.2914|0.5571|0.3659|
+| 12|   0.3175|0.6082|0.4005|
+| 13|   0.3197|0.6114|0.4037|
+| 14|   0.3185|0.6084|0.4018|
+| 15|   0.3113|0.6109|0.3962|
+| 16|   0.2910|0.5580|0.3659|
+| 17|   0.2946|0.5712|0.3723|
+| 18|   0.2967|0.5721|0.3749|
+| 19|   0.2987|0.5778|0.3773|
+| 20|   0.3000|0.5776|0.3794|
+| 21|   0.3000|0.5776|0.3794|
 
-Based on the scores, I decided k value of 7 had the best precision and recall and both had to be higher the .3 according to project specifications.
+Based on the scores, I decided k value of 5 had the best f1 score and had precision and recall higher than .3 which was needed according to project specifications.
 
 The features score from the SelectKBest algorithm came back with same scores on all of the k values. If you don't give SelectKBest a k value, it will choose 10 by default.
 Here is a list of the features with the scores sorted highest:
@@ -242,7 +242,7 @@ After rerunning, Decision Tree's performance was:
 
 | Algorithm    |original features accuracy|original features precision|original features recall|new features accuracy|new features precision|new features recall|
 |--------------|-----------------:|--------------:|------------:|---------:|---------:|---------:|
-|Decision Tree |            0.8669|         0.3751|       0.1343|    0.8607|    0.2788|    0.1063|
+|Decision Tree |            0.8561|         0.3496|       0.1738|    0.8551|    0.3003|    0.1594|
 
 
 ## Validate and Evaluate
@@ -254,9 +254,9 @@ After rerunning, Decision Tree's performance was:
 Two Evaluation Metrics are Recall and Precision. 
 
 Recall is calculated by taking the count of True Positives and divide by (True Positive + False Negative). This measures how many correctly identified positives there were. In the case of this project a True Postive is a POI that was identified correctly as a POI. A False Negative is a POI who was not identified correctly. 
-When I ran the final test_classifier function I was able to get 0.37950, which means that only 37.95 % of POI's were identified correclty.
+When I ran the final test_classifier function I was able to get 0.32650, which means that only 32.65 % of POI's were identified correclty.
 
-Precision is calculated by taking the count of True Positives and divide by (True Positives + False Positives). This measures how many truly should be in positive class. In the case of this project a True Postive is a POI that was identified correctly as a POI. A False Positive is a non-POI identified as a POI. Using Naive Bayes classifier I was able to get a precision score of 0.48716, which means 48.72 % of people identified as a POI were actually POI's and 998 predicitions were incorrect.
+Precision is calculated by taking the count of True Positives and divide by (True Positives + False Positives). This measures how many truly should be in positive class. In the case of this project a True Postive is a POI that was identified correctly as a POI. A False Positive is a non-POI identified as a POI. Using Naive Bayes classifier I was able to get a precision score of 0.49545, which means 49.54 % of people identified as a POI were actually POI's and 998 predicitions were incorrect.
 
 ### Discuss validation and its importance.
 
@@ -275,21 +275,20 @@ features_train, features_test, labels_train, labels_test = train_test_split(feat
 
 #### Mean Accuracy, Precision and Recall for Final Algorithm
 
-| Algorithm    |Best features accuracy|Best features precision|Best features recall|
+|              |Best features accuracy|Best features precision|Best features recall|
 |--------------|---------------------:|----------------------:|-------------------:|
-|Support Vector|                0.8704|                 0.0000|              0.0000|
-|Naive Bayes   |                0.8480|                 0.4087|              0.3645|
-|Random Forest |                0.8648|                 0.3897|              0.1648|
-|AdaBoost      |                0.8204|                 0.2762|              0.2388|
-|Decision Tree |                0.8217|                 0.3038|              0.2791|
-
+|Support Vector|                0.8663|                 0.0000|              0.0000|
+|Naive Bayes   |                0.8402|                 0.4262|              0.3213|
+|Random Forest |                0.8524|                 0.3879|              0.2297|
+|AdaBoost      |                0.8062|                 0.2708|              0.2448|
+|Decision Tree |                0.7935|                 0.2834|              0.3438|
 
 ### Algorithm Performance
 
-When tester.py was used to evaluate performance of classifier I picked Naive Bayes, Precision was 0.386 and Recall was 0.31
+When tester.py was used to evaluate performance of classifier I picked Naive Bayes, Precision was 0.49545 and Recall was 0.3265
 
 | Accuracy   |      Precision      |  Recall | F1 | F2 | Total predictions | True positives | False positives | False negatives | True negatives |
 |----------|-------------|------|------|------|------|------|------|------|------|
-| 0.85429 |  0.48716 |  0.37950 | 0.42664 | 0.39705 | 14000 |  759 |  799 | 1241 | 11201 |
+| 0.85429 |  0.49545 |  0.32650 | 0.39361 | 0.35040 | 14000 |  653 |  665 | 1347 | 11335 |
 
 
